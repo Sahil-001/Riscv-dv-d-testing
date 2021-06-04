@@ -1,0 +1,9 @@
+DFLAGS = -I../../../esdl/src -L-L../../../build -L-R../../../build -L-luvm-ldc-debug-shared -L-lesdl-ldc-shared -L-lphobos2-ldc-shared -L-ldruntime-ldc-shared 
+
+LDC2 = ldc2
+
+clean:
+	rm -rf *.exe *.o *~
+
+%.exe : %.d
+	@ $(LDC2) $^ $(DFLAGS) -relocation-model=pic -of$@

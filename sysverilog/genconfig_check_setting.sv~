@@ -1,0 +1,91 @@
+// Code your testbench here
+// or browse
+
+
+//  Examples without uvm
+module testtb;
+
+    typedef enum bit [3:0] {
+    BARE = 4'b0000,
+    SV32 = 4'b0001,
+    SV39 = 4'b1000,
+    SV48 = 4'b1001,
+    SV57 = 4'b1010,
+    SV64 = 4'b1011
+  } satp_mode_t;
+
+
+    typedef enum bit [4:0] {
+    RV32I,
+    RV64I,
+    RV32M,
+    RV64M,
+    RV32A,
+    RV64A,
+    RV32F,
+    RV32FC,
+    RV64F,
+    RV32D,
+    RV32DC,
+    RV64D,
+    RV32C,
+    RV64C,
+    RV128I,
+    RV128C,
+    RVV,
+    RV32B,
+    RV64B,
+    RV32X,
+    RV64X
+  } riscv_instr_group_t;
+
+class bar;
+
+
+ 
+  function void check_setting(int XLEN , satp_mode_t SATP_MODE);
+    bit support_64b;
+    bit support_128b;
+    
+    riscv_instr_group_t supported_isa[$] = {RV32I, RV32M, RV64I, RV64M, RV32C, RV64C, RV128C}; 
+    foreach (supported_isa[i]) begin
+      if (supported_isa[i] inside {RV64I, RV64M, RV64A, RV64F, RV64D, RV64C,
+                                                    RV64B}) begin
+        support_64b = 1'b1;
+      end else if (supported_isa[i] inside {RV128I, RV128C}) begin
+        support_128b = 1'b1;
+      end
+    end
+    if (support_128b && XLEN != 128) begin
+      $display("XLEN should be set to 128 based on riscv_instr_pkg::supported_isa setting");
+    end
+    if (!support_128b && support_64b && XLEN != 64) begin
+      $display("XLEN should be set to 64 based on riscv_instr_pkg::supported_isa setting");
+    end
+    if (!(support_128b || support_64b) && XLEN != 32) begin
+      $display("XLEN should be set to 32 based on riscv_instr_pkg::supported_isa setting");
+    end
+    if (!(support_128b || support_64b) && !(SATP_MODE inside {SV32, BARE})) begin
+      $display("SATP mode %0s is not supported for RV32G ISA", SATP_MODE);
+    end
+    
+  endfunction // check_setting
+   
+endclass // bar
+
+program test;
+
+   bar b1;
+   int XLEN;
+   satp_mode_t SATP_MODE;
+
+   initial begin
+      XLEN = 32;
+      SATP_MODE = SV32;
+     b1.check_setting(XLEN,SATP_MODE);
+     
+   end // initial begin
+endprogram // test
+   
+endmodule
+
